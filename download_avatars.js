@@ -1,7 +1,8 @@
 const request = require('request');
 const fs = require('fs');
-const GITHUB_TOKEN = require('./secrets');
 const repoInfo = process.argv.slice(2);
+
+require('dotenv').config()
 
 console.log('Welcome to the GitHub Avatar Downloader!');
 
@@ -10,11 +11,12 @@ function getRepoContributors(repoOwner, repoName, cb) {
     console.log(`Please specify arguments using the following format: repoOwner repoName`)
     return;
   };
+  console.log(process.env.GITHUB_TOKEN)
   const options = {
     url: `https://api.github.com/repos/${repoOwner}/${repoName}/contributors`,
     headers: {
       'User-Agent': 'request',
-      'Authorization': `token ${GITHUB_TOKEN.GITHUB_TOKEN}`
+      'Authorization': `token ${process.env.GITHUB_TOKEN}`
     }
   };
   request(options, function(err, res, body) {

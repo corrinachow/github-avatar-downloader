@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/corrinachow/github-avatar-downloader#readme",
   "dependencies": {
+    "dotenv": "^5.0.1",
     "request": "^2.85.0"
   }
 }
