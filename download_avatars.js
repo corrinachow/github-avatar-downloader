@@ -65,9 +65,11 @@ function checkAvatarFolder() {
   return;
 }
 
-function downloadImageByURL(url, filePath) {
-  request
-    .get(url)
+function downloadImageByURL(err, userData) {
+  checkAvatarFolder();
+  for (const user of userData) {
+    request
+    .get(user.avatar_url)
     .on('error', err => {
       throw err;
     })
@@ -75,11 +77,49 @@ function downloadImageByURL(url, filePath) {
       console.log (response.statusCode, response.statusMessage, response.headers['content-type']);
       console.log('Downloading image...');
     })
-    .pipe(fs.createWriteStream(filePath))
+    .pipe(fs.createWriteStream(`avatars/${userData.login}.jpg`))
     .on('finish', () => {
       console.log('Download complete.');
     })
+  }
 }
+
+//res.name
+//res.stargazers_count
+
+
+
+function recommendRepo(err, userData) {
+  for (const user of userData) {
+    const options = {
+      url: `https://api.github.com/users/${user.login}/starred`,
+      headers: {
+      'User-Agent': 'request',
+      'Authorization': `token ${process.env.GITHUB_TOKEN}`
+    }
+  }
+    request(options, function(err, res, body) {
+      for (const repo of JSON.parse(body)) {
+        console.log(user.login)
+        console.log(repo.name)
+        console.log(repo.stargazers_count)
+      }
+    });
+  }
+}
+
+
+  //   .get(`https://api.github.com/users/${user.login}/starred`)
+  //   .on('error', err => {
+  //     throw err;
+  //   })
+  //   .on('response', (response) => {
+  //     // console.log(response);
+  //   })
+  //   .on('finish', () => {
+  //     console.log('Download complete.');
+  //   })
+  // }
 
 function getRepoContributors(repoOwner, repoName, cb) {
   const options = {
@@ -93,14 +133,11 @@ function getRepoContributors(repoOwner, repoName, cb) {
   request(options, function(err, res, body) {
     if (err) {
       console.log(err);
-      process.exit(1);
+      throw err;
     }
     checkResponse(res);
-    checkAvatarFolder();
-      for (const user of JSON.parse(body)) {
-        cb(user.avatar_url, `avatars/${user.login}.jpg`);
-      };
+    cb(err, JSON.parse(body));
   });
 }
 
-getRepoContributors(username, repo, downloadImageByURL);
+getRepoContributors(username, repo, recommendRepo);
