@@ -87,6 +87,31 @@ function downloadImageByURL(err, userData) {
 //res.name
 //res.stargazers_count
 
+function arrSort(arr) {
+
+}
+
+function parseStarredData(err, userData, user) {
+  console.log(user)
+  const starredReposList = {};
+  for (const repo of JSON.parse(userData)) {
+
+    const userStarredRepo = {};
+    const reposStarredByUser = {
+      name: repo.name,
+      stars: repo.stargazers_count,
+    };
+    //Object.assign(target, ...sources)
+    if (!starredReposList[user]) {
+      starredReposList[user] = [];
+    }
+
+    starredReposList[user].push(reposStarredByUser)
+
+
+  }
+  console.log(starredReposList)
+}
 
 
 function recommendRepo(err, userData) {
@@ -99,12 +124,19 @@ function recommendRepo(err, userData) {
     }
   }
     request(options, function(err, res, body) {
-      for (const repo of JSON.parse(body)) {
-        console.log(user.login)
-        console.log(repo.name)
-        console.log(repo.stargazers_count)
-      }
-    });
+      parseStarredData(err, body, user.login);
+})
+    //   const starredReposList = []
+    //   for (const repo of JSON.parse(body)) {
+    //     const userStarredRepo = {};
+    //     const reposStarredByUser = {
+    //       name: repo.name,
+    //       stars: repo.stargazers_count,
+    //     };
+    //     starredReposList.push(reposStarredByUser);
+    //   }
+    //   console.log(starredReposList)
+    // });
   }
 }
 
