@@ -1,29 +1,68 @@
 const request = require('request');
 const fs = require('fs');
-const repoInfo = process.argv.slice(2);
+const [username, repo] = process.argv.slice(2);
 
 require('dotenv').config()
 
 console.log('Welcome to the GitHub Avatar Downloader!');
 
-function getRepoContributors(repoOwner, repoName, cb) {
-  if (!repoOwner || !repoName) {
-    console.log(`Please specify arguments using the following format: repoOwner repoName`)
-    return;
+function checkUsername() {
+  if (!username) {
+    console.log('Please enter a username');
+    process.exit(1);
   };
-  console.log(process.env.GITHUB_TOKEN)
-  const options = {
-    url: `https://api.github.com/repos/${repoOwner}/${repoName}/contributors`,
-    headers: {
-      'User-Agent': 'request',
-      'Authorization': `token ${process.env.GITHUB_TOKEN}`
-    }
+}
+
+function checkRepo() {
+  if (!repo) {
+    console.log('Please enter a repository name');
+    process.exit(1);
   };
-  request(options, function(err, res, body) {
-    for (const user of JSON.parse(body)) {
-      cb(user.avatar_url, `avatars/${user.login}.jpg`);
+}
+
+function checkEnv() {
+  if (!fs.existsSync('.env')) {
+    console.log('.env file does not exist');
+    process.exit(1);
+  };
+
+  fs.readFile('.env', 'utf8', function (err, data) {
+    if (err) {
+      console.log(err);
+    } else if (!data.includes('GITHUB_TOKEN')) {
+      console.log('Please configure your .env file with GITHUB_TOKEN');
     };
   });
+  return;
+}
+
+function checkArguments() {
+  checkUsername();
+  checkRepo();
+  checkEnv();
+}
+
+checkArguments();
+
+function checkResponse(res) {
+  if (res.statusCode !== 200) {
+    console.log(`${res.statusCode}: ${res.statusMessage}`)
+    process.exit(1);
+  } else if (res.statusCode === 401) {
+    console.log(`${res.statusCode}: ${res.statusMessage}\nOAuth key invalid`);
+    process.exit(1);
+  } else if (res.statusCode === 404) {
+    console.log(`${res.statusCode}: ${res.statusMessage}\nRepository not found`);
+    process.exit(1);
+  }
+  return
+}
+
+function checkAvatarFolder() {
+  if (!fs.existsSync('./avatars')) {
+    fs.mkdirSync('./avatars');
+  };
+  return;
 }
 
 function downloadImageByURL(url, filePath) {
@@ -42,4 +81,26 @@ function downloadImageByURL(url, filePath) {
     })
 }
 
-getRepoContributors(repoInfo[0], repoInfo[1], downloadImageByURL);
+function getRepoContributors(repoOwner, repoName, cb) {
+  const options = {
+    url: `https://api.github.com/repos/${repoOwner}/${repoName}/contributors`,
+    headers: {
+      'User-Agent': 'request',
+      'Authorization': `token ${process.env.GITHUB_TOKEN}`
+    }
+  };
+
+  request(options, function(err, res, body) {
+    if (err) {
+      console.log(err);
+      process.exit(1);
+    }
+    checkResponse(res);
+    checkAvatarFolder();
+      for (const user of JSON.parse(body)) {
+        cb(user.avatar_url, `avatars/${user.login}.jpg`);
+      };
+  });
+}
+
+getRepoContributors(username, repo, downloadImageByURL);
